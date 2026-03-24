@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+import json
+import urllib.request
+import urllib.parse
+from datetime import datetime, timedelta, timezone
+
+# --- Configuration ---
+# USGS Earthquake API Endpoint
+API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+
+# San Francisco Bay Area Bounding Box
+MIN_LAT = 36.8
+MAX_LAT = 38.6
+MIN_LON = -123.6
+MAX_LON = -121.2
+
+# Settings
+MIN_MAGNITUDE = 1.0   # Minimum magnitude to display
+DAYS_HISTORY = 3      # How many days back to look
+LIMIT = 15            # Max number of results to show
+
+def fetch_quakes():
+    """Fetches earthquake data from USGS using standard libraries only."""
+    
+    start_time = datetime.now(timezone.utc) - timedelta(days=DAYS_HISTORY)
+    
+    params = {
+        "format": "geojson",
+        "starttime": start_time.isoformat(),
+        "minlatitude": MIN_LAT,
+        "maxlatitude": MAX_LAT,
+        "minlongitude": MIN_LON,
+        "maxlongitude": MAX_LON,
+        "minmagnitude": MIN_MAGNITUDE,
+        "orderby": "time",
+        "limit": LIMIT
+    }
+
+    query_string = urllib.parse.urlencode(params)
+    full_url = f"{API_URL}?{query_string}"
+
+    try:
+        with urllib.request.urlopen(full_url, timeout=10) as response:
+            if response.status != 200:
+                print(f"Error: Received HTTP {response.status} from USGS.")
+                return
+
+            data = json.loads(response.read().decode('utf-8'))
+            display_results(data)
+
+    except urllib.error.URLError as e:
+        print(f"Network Error: {e.reason}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def display_results(data):
+    """Formats and prints the earthquake data to the console."""
+    
+    count = data['metadata']['count']
+    print(f"\n--- Latest Earthquakes: SF Bay Area (Last {DAYS_HISTORY} days) ---")
+    print(f"Found {count} events > Mag {MIN_MAGNITUDE}\n")
+    
+    if count == 0:
+        print("No recent earthquakes found.")
+        return
+
+    # Header Formatting
+    # Added COORDS column, widened table slightly
+    header = f"{'MAG':<6} | {'TIME (Local)':<18} | {'COORDS (Lat, Lon)':<20} | {'LOCATION'}"
+    print(header)
+    print("-" * len(header))
+
+    for feature in data['features']:
+        props = feature['properties']
+        geom = feature['geometry']
+        
+        # Extract properties
+        mag = props.get('mag', 0)
+        place = props.get('place', 'Unknown location')
+        timestamp_ms = props.get('time')
+        
+        # Extract Coordinates (GeoJSON is [Lon, Lat, Depth])
+        lon = geom['coordinates'][0]
+        lat = geom['coordinates'][1]
+        
+        # Convert timestamp
+        if timestamp_ms:
+            dt_utc = datetime.fromtimestamp(timestamp_ms / 1000, timezone.utc)
+            dt_local = dt_utc.astimezone()
+            time_str = dt_local.strftime('%Y-%m-%d %H:%M')
+        else:
+            time_str = "N/A"
+
+        # Colorize Magnitude
+        color = "\033[0m" # Reset
+        if mag >= 3.5:
+            color = "\033[91m" # Red
+        elif mag >= 2.5:
+            color = "\033[93m" # Yellow
+            
+        # Print row with formatted coordinates (4 decimal places)
+        print(f"{color}{mag:<6.1f}\033[0m | {time_str:<18} | {lat:<8.4f}, {lon:<9.4f} | {place}")
+    print("")
+
+if __name__ == "__main__":
+    fetch_quakes()
