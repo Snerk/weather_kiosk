@@ -1,0 +1,6 @@
+[Unit]
+Description=Hive Kiosk self-update from origin/main
+
+[Service]
+Type=oneshot
+ExecStart=/opt/weather_kiosk/bin/kiosk-update.sh

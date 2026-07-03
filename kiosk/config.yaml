@@ -1,0 +1,96 @@
+# Hive Kiosk configuration. Committed to the repo — no secrets here.
+# Runtime overrides made in the admin panel are stored in
+# /var/lib/weather-kiosk/overrides.json and win over this file.
+
+display:
+  rotation_seconds: 45          # default dwell per module
+  transition_ms: 600
+  modules:                      # order of rotation; per-module dwell overrides
+    - id: ai_news
+      enabled: true
+      dwell: 45
+    - id: world_news
+      enabled: true
+      dwell: 45
+    - id: weather
+      enabled: true
+      dwell: 60
+    - id: discord
+      enabled: true
+      dwell: 40
+    - id: showcase
+      enabled: true
+      dwell: 45
+  showcase_promo_every_n_cycles: 4   # flash the "how to post" screen every Nth full cycle
+
+admin:
+  key_sequence: "hivemind"      # type this anywhere on the kiosk to reveal login
+  # password hash lives in /etc/weather-kiosk/secrets.env (ADMIN_HASH)
+
+ai_news:
+  refresh_minutes: 30
+  max_items: 10
+  feeds:
+    - https://feeds.arstechnica.com/arstechnica/technology-lab
+    - https://www.engadget.com/rss.xml
+    - https://www.theregister.com/software/ai_ml/headlines.atom
+  keyword_filter: ["ai", "llm", "model", "anthropic", "openai", "gemini", "claude",
+                   "gpt", "mistral", "llama", "deepseek", "inference", "agent"]
+  leaderboard:
+    # HF's Open LLM Leaderboard was retired/archived in 2025; sources here are
+    # best-effort scrapers with a committed fallback snapshot.
+    refresh_hours: 12
+    fallback_file: leaderboard_fallback.json
+
+world_news:
+  refresh_minutes: 20
+  max_items: 12
+  # AP and Reuters do not publish public RSS; Google News RSS site-filters keep
+  # the sourcing restricted to those two wires.
+  feeds:
+    - https://news.google.com/rss/search?q=site:apnews.com%20world&hl=en-US&gl=US&ceid=US:en
+    - https://news.google.com/rss/search?q=site:reuters.com%20world&hl=en-US&gl=US&ceid=US:en
+
+sports:
+  refresh_minutes: 30
+  # ESPN public scoreboard endpoints; team filters applied client-side of the fetcher
+  leagues:
+    - {path: "basketball/wnba",            teams: ["Golden State Valkyries"]}
+    - {path: "hockey/nhl",                 teams: ["San Jose Sharks"]}
+    - {path: "baseball/mlb",               teams: ["San Francisco Giants"]}
+    - {path: "basketball/nba",             teams: ["Golden State Warriors"]}
+    - {path: "football/nfl",               teams: ["San Francisco 49ers"]}
+    - {path: "soccer/usa.1",               teams: ["San Jose Earthquakes"]}
+    - {path: "soccer/usa.nwsl",            teams: ["Bay FC"]}
+    - {path: "soccer/fifa.world",          teams: []}     # World Cup: show everything
+    - {path: "soccer/uefa.champions",      teams: []}
+
+weather:
+  lat: 37.7726          # 1040 Folsom St (94103)
+  lon: -122.4094
+  refresh_minutes: 60   # hourly graph refresh
+  hours: 48
+  user_agent: "hive-kiosk (github.com/Snerk/weather_kiosk)"
+
+goes:
+  refresh_minutes: 20
+  hours: 72
+  frame_stride_minutes: 30    # keep 1 frame per 30 min per panel (~144 frames)
+  panels:
+    - {id: fd,    url: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/FD/GEOCOLOR/",         size: "1808x1808"}
+    - {id: conus, url: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/CONUS/GEOCOLOR/",      size: "2500x1500"}
+    - {id: psw,   url: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/psw/GEOCOLOR/", size: "2400x2400"}
+
+discord:
+  # Token lives in /etc/weather-kiosk/secrets.env (DISCORD_BOT_TOKEN).
+  # These must be channel IDs the bot can read. NOTE: the original spec listed
+  # 1123265586860916786 twice; deduplicated here.
+  feed_channels:
+    - "1123265586860916786"
+    - "1121114936479846570"
+    - "1121115983084519594"
+  alert_channel: "1121115983084519594"
+  feed_refresh_minutes: 10
+  alert_refresh_minutes: 10
+  alert_display_minutes: 10
+  messages_per_channel: 5

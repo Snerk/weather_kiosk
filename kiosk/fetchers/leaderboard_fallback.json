@@ -1,0 +1,11 @@
+{
+  "source": "fallback snapshot — refresh me via PR (kiosk/fetchers/leaderboard_fallback.json)",
+  "rows": [
+    {"model": "Claude Fable 5", "score": null, "open": false},
+    {"model": "GPT-5.x", "score": null, "open": false},
+    {"model": "Gemini 3 Pro", "score": null, "open": false},
+    {"model": "Llama 4 Maverick", "score": null, "open": true},
+    {"model": "DeepSeek-V3.x", "score": null, "open": true},
+    {"model": "Qwen 3", "score": null, "open": true}
+  ]
+}

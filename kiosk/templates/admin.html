@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Hive Kiosk Admin</title>
+<link rel="stylesheet" href="/static/kiosk.css"></head>
+<body class="admin-page">
+<h1>Kiosk admin</h1>
+<div id="login">
+  <input id="pass" type="password" placeholder="password">
+  <button onclick="login()">Unlock</button> <span id="err"></span>
+</div>
+<div id="panel" class="hidden">
+  <h2>Rotation</h2>
+  <label>Transition (ms) <input id="transition_ms" type="number"></label>
+  <label>Default dwell (s) <input id="rotation_seconds" type="number"></label>
+  <h2>Modules</h2>
+  <div id="mods"></div>
+  <button onclick="save()">Save changes</button> <span id="saved"></span>
+  <h2>System</h2>
+  <button onclick="sys('update-now')">Pull latest code now</button>
+  <button onclick="sys('restart-server')">Restart server</button>
+  <button onclick="sys('restart-browser')">Restart browser</button>
+  <button onclick="sys('reboot')">Reboot machine</button>
+</div>
+<script>
+let TOK = "";
+async function login() {
+  const r = await fetch("/api/admin/login", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({password: document.getElementById("pass").value})});
+  if (!r.ok) { document.getElementById("err").textContent = "wrong password"; return; }
+  TOK = (await r.json()).token;
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("panel").classList.remove("hidden");
+  load();
+}
+async function load() {
+  const d = await (await fetch("/api/admin/settings", {headers: {"X-Kiosk-Session": TOK}})).json();
+  transition_ms.value = d.transition_ms; rotation_seconds.value = d.rotation_seconds;
+  mods.innerHTML = d.modules.map((m, i) => `
+    <div class="modrow">
+      <label><input type="checkbox" data-i="${i}" class="men" ${m.enabled ? "checked" : ""}> ${m.id}</label>
+      dwell <input type="number" class="mdw" data-i="${i}" value="${m.dwell}"> s
+    </div>`).join("");
+  window._mods = d.modules;
+}
+async function save() {
+  const modules = window._mods.map((m, i) => ({...m,
+    enabled: document.querySelector(`.men[data-i="${i}"]`).checked,
+    dwell: +document.querySelector(`.mdw[data-i="${i}"]`).value}));
+  const r = await fetch("/api/admin/settings", {method: "POST",
+    headers: {"Content-Type": "application/json", "X-Kiosk-Session": TOK},
+    body: JSON.stringify({transition_ms: +transition_ms.value,
+      rotation_seconds: +rotation_seconds.value, modules})});
+  saved.textContent = r.ok ? "saved — kiosk picks it up on next cycle" : "failed";
+}
+async function sys(a) {
+  if (a === "reboot" && !confirm("Reboot the kiosk machine?")) return;
+  await fetch("/api/admin/system/" + a, {method: "POST", headers: {"X-Kiosk-Session": TOK}});
+}
+</script>
+</body></html>

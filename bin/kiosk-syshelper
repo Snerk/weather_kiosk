@@ -1,0 +1,10 @@
+#!/bin/bash
+# Privileged actions reachable from the admin panel. Installed with a sudoers
+# rule so the (unprivileged) server can invoke exactly this script, nothing else.
+case "$1" in
+  restart-server)  systemctl restart kiosk-server.service ;;
+  restart-browser) pkill -u kiosk chromium || true ;;   # autostart loop relaunches it
+  update-now)      systemctl start kiosk-update.service ;;
+  reboot)          systemctl reboot ;;
+  *) echo "unknown action" >&2; exit 1 ;;
+esac

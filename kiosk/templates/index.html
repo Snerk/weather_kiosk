@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hive Kiosk</title>
+<link rel="stylesheet" href="/static/kiosk.css">
+</head>
+<body>
+  <header id="masthead">
+    <div id="brand">HIVE <span>1040 Folsom</span></div>
+    <div id="clock">--:--</div>
+  </header>
+
+  <main id="stage"></main>
+
+  <footer id="strip">
+    <div id="module-caption">warming up…</div>
+    <div id="dots"></div>
+  </footer>
+
+  <div id="alert-overlay" class="hidden">
+    <div class="alert-card">
+      <div class="alert-eyebrow">HIVE ANNOUNCEMENT</div>
+      <div id="alert-body"></div>
+      <div id="alert-meta"></div>
+    </div>
+  </div>
+
+  <div id="admin-gate" class="hidden">
+    <div class="admin-card">
+      <div class="alert-eyebrow">ADMIN</div>
+      <input id="admin-pass" type="password" placeholder="password" autofocus>
+      <button id="admin-go">Unlock</button>
+      <div id="admin-err"></div>
+    </div>
+  </div>
+
+<script src="/static/kiosk.js"></script>
+</body>
+</html>

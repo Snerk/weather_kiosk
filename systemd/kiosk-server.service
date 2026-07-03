@@ -1,0 +1,20 @@
+[Unit]
+Description=Hive Kiosk data server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=kiosk
+WorkingDirectory=/opt/weather_kiosk/kiosk
+Environment=KIOSK_STATE_DIR=/var/lib/weather-kiosk
+ExecStart=/opt/weather_kiosk/.venv/bin/python /opt/weather_kiosk/kiosk/server.py
+Restart=always
+RestartSec=5
+# hardening
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths=/var/lib/weather-kiosk
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
